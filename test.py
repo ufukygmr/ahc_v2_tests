@@ -1,6 +1,11 @@
 import time
 from enum import Enum
-from adhoccomputing import GenericModel, Event, Generics, Definitions, Topology, FramerObjects, FrameHandlerBase, ofdm_callback, MacCsmaPPersistentConfigurationParameters, MacCsmaPPersistent, UsrpB210OfdmFlexFramePhy
+from tkinter import EventType
+from adhoccomputing.Generics import Event, EventTypes,  GenericMessage, GenericMessageHeader, GenericMessagePayload, ConnectorTypes
+from adhoccomputing import GenericModel
+from adhoccomputing.Experimentation import  Topology
+from adhoccomputing.Networking.PhysicalLayer import  FrameHandlerBase, UsrpB210OfdmFlexFramePhy
+from adhoccomputing.Networking.MacProtocol import CSMA, GenericMAC
 from ctypes import *
 
 
@@ -9,7 +14,7 @@ class ApplicationLayerMessageTypes(Enum):
     BROADCAST = "BROADCAST"
 
 # define your own message header structure
-class ApplicationLayerMessageHeader(Generics.GenericMessageHeader):
+class ApplicationLayerMessageHeader(GenericMessageHeader):
     pass
 
 # define your own EventTypes 
@@ -34,10 +39,10 @@ class UsrpApplicationLayer(GenericModel):
 
     def on_message_from_top(self, eventobj: Event):
     # print(f"I am {self.componentname}.{self.componentinstancenumber},sending down eventcontent={eventobj.eventcontent}\n")
-        self.send_down(Event(self, Definitions.EventTypes.MFRT, eventobj.eventcontent))
+        self.send_down(Event(self, EventTypes.MFRT, eventobj.eventcontent))
 
     def on_message_from_bottom(self, eventobj: Event):
-        evt = Event(self, Definitions.EventTypes.MFRT, eventobj.eventcontent)
+        evt = Event(self, EventTypes.MFRT, eventobj.eventcontent)
         print(f"I am Node.{self.componentinstancenumber}, received from Node.{eventobj.eventcontent.header.messagefrom} a message: {eventobj.eventcontent.payload}")
         if self.componentinstancenumber == 1:
             evt.eventcontent.header.messageto = 0
@@ -57,8 +62,8 @@ class UsrpApplicationLayer(GenericModel):
         self.counter = self.counter + 1
 
         payload = "BMSG-" + str(self.counter)
-        broadcastmessage = Generics.GenericMessage(hdr, payload)
-        evt = Event(self, Definitions.EventTypes.MFRT, broadcastmessage)
+        broadcastmessage = GenericMessage(hdr, payload)
+        evt = Event(self, EventTypes.MFRT, broadcastmessage)
         # time.sleep(3)
         self.send_down(evt)
 
@@ -75,22 +80,22 @@ class UsrpNode(GenericModel):
     def __init__(self, componentname, componentid):
         # SUBCOMPONENTS
 
-        macconfig = MacCsmaPPersistentConfigurationParameters(0.5)
+        macconfig = CSMA.MacCsmaPPersistentConfigurationParameters(0.5)
 
         self.appl = UsrpApplicationLayer("UsrpApplicationLayer", componentid)
         self.phy = UsrpB210OfdmFlexFramePhy("UsrpB210OfdmFlexFramePhy", componentid)
-        self.mac = MacCsmaPPersistent("MacCsmaPPersistent", componentid,  configurationparameters=macconfig, uhd=self.phy.ahcuhd)
+        self.mac = CSMA.MacCsmaPPersistent("MacCsmaPPersistent", componentid,  configurationparameters=macconfig, uhd=self.phy.ahcuhd)
 
         # CONNECTIONS AMONG SUBCOMPONENTS
-        self.appl.connect_me_to_component(Definitions.ConnectorTypes.UP, self) #Not required if nodemodel will do nothing
-        self.appl.connect_me_to_component(Definitions.ConnectorTypes.DOWN, self.mac)
+        self.appl.connect_me_to_component(ConnectorTypes.UP, self) #Not required if nodemodel will do nothing
+        self.appl.connect_me_to_component(ConnectorTypes.DOWN, self.mac)
 
-        self.mac.connect_me_to_component(Definitions.ConnectorTypes.UP, self.appl)
-        self.mac.connect_me_to_component(Definitions.ConnectorTypes.DOWN, self.phy)
+        self.mac.connect_me_to_component(ConnectorTypes.UP, self.appl)
+        self.mac.connect_me_to_component(ConnectorTypes.DOWN, self.phy)
 
         # Connect the bottom component to the composite component....
-        self.phy.connect_me_to_component(Definitions.ConnectorTypes.UP, self.mac)
-        self.phy.connect_me_to_component(Definitions.ConnectorTypes.DOWN, self)
+        self.phy.connect_me_to_component(ConnectorTypes.UP, self.mac)
+        self.phy.connect_me_to_component(ConnectorTypes.DOWN, self)
 
         # self.phy.connect_me_to_component(ConnectorTypes.DOWN, self)
         # self.connect_me_to_component(ConnectorTypes.DOWN, self.appl)
