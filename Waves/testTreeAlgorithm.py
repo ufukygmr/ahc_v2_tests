@@ -33,7 +33,6 @@ def main():
 
 
   plt.show()  
-  while (True): pass
 
 if __name__ == "__main__":
   main()
