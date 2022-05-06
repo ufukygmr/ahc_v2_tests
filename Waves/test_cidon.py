@@ -14,11 +14,10 @@ import matplotlib.pyplot as plt
 import networkx as nx
 
 from adhoccomputing.GenericModel import GenericModel
-from adhoccomputing.GenericEvent import Event
-from adhoccomputing.Definitions import EventTypes, ConnectorTypes
+from adhoccomputing.Generics import Event, EventTypes, ConnectorTypes
 from adhoccomputing.Experimentation.Topology import Topology
-from adhoccomputing.Networking.LinkLayer import GenericLinkLayer
-from adhoccomputing.Networking.NetworkLayer import GenericNetworkLayer
+from adhoccomputing.Networking.LinkLayer.GenericLinkLayer import GenericLinkLayer
+from adhoccomputing.Networking.NetworkLayer.GenericNetworkLayer import GenericNetworkLayer
 from adhoccomputing.Networking.LogicalChannels.GenericChannel import P2PFIFOPerfectChannel
 from adhoccomputing.DistributedAlgorithms.Waves.CidonDFS import ApplicationLayerComponent_Cidon
 
@@ -37,13 +36,17 @@ class AdHocNode(GenericModel):
     def on_message_from_bottom(self, eventobj: Event):
       self.send_up(Event(self, EventTypes.MFRB, eventobj.eventcontent))
 
-    def __init__(self, componentname, componentid):
+    def __init__(self, componentname, componentid, topology):
       super().__init__(componentname, componentid)
-
+      self.components = []
       # SUBCOMPONENTS
-      self.appllayer = ApplicationLayerComponent_Cidon("ApplicationLayer", componentid)
-      self.netlayer = GenericNetworkLayer("NetworkLayer", componentid)
+      self.appllayer = ApplicationLayerComponent_Cidon("ApplicationLayer", componentid, topology=topology)
+      self.netlayer = GenericNetworkLayer("NetworkLayer", componentid, topology=topology)
       self.linklayer = GenericLinkLayer("LinkLayer", componentid)
+
+      self.components.append(self.appllayer)
+      self.components.append(self.netlayer)
+      self.components.append(self.linklayer)
 
       # CONNECTIONS AMONG SUBCOMPONENTS
       self.appllayer.connect_me_to_component(ConnectorTypes.DOWN, self.netlayer)
@@ -59,7 +62,6 @@ class AdHocNode(GenericModel):
 
 
 def main():
-  G = nx.Graph()
   """
   for i in range(5):
     G.add_node(i)
