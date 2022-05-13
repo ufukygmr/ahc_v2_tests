@@ -83,7 +83,7 @@ class UsrpNode(GenericModel):
         # SUBCOMPONENTS
         
         macconfig = MacCsmaPPersistentConfigurationParameters(0.5)
-        usrpconfig = UsrpConfiguration(freq =2462000000.0, bandwidth = 250000, chan = 0, hw_tx_gain = 50.0, hw_rx_gain = 20.0, sw_tx_gain = -12.0)
+        usrpconfig = UsrpConfiguration(freq =900000000.0, bandwidth = 250000, chan = 0, hw_tx_gain = 50.0, hw_rx_gain = 20.0, sw_tx_gain = -12.0)
         
         self.appl = UsrpApplicationLayer("UsrpApplicationLayer", componentinstancenumber, topology=topology)
         self.phy = UsrpB210OfdmFlexFramePhy("UsrpB210OfdmFlexFramePhy", componentinstancenumber, usrpconfig=usrpconfig, topology=topology)
@@ -113,7 +113,7 @@ def main():
     topo = Topology()
 # Note that the topology has to specific: usrp winslab_b210_0 is run by instance 0 of the component
 # Therefore, the usrps have to have names winslab_b210_x where x \in (0 to nodecount-1)
-    topo.construct_winslab_topology_without_channels(4, UsrpNode)
+    topo.construct_winslab_topology_without_channels(3, UsrpNode)
   # topo.construct_winslab_topology_with_channels(2, UsrpNode, FIFOBroadcastPerfectChannel)
   
   # time.sleep(1)
@@ -123,7 +123,8 @@ def main():
     i = 0
     while(i < 100):
         topo.nodes[2].appl.send_self(Event(topo.nodes[0], UsrpApplicationLayerEventTypes.STARTBROADCAST, None))
-        #topo.nodes[1].appl.send_self(Event(topo.nodes[0], UsrpApplicationLayerEventTypes.STARTBROADCAST, None))
+        time.sleep(0.1)
+        topo.nodes[0].appl.send_self(Event(topo.nodes[0], UsrpApplicationLayerEventTypes.STARTBROADCAST, None))
         time.sleep(0.1)
         i = i + 1
 

@@ -76,7 +76,7 @@ class UsrpNode(GenericModel):
         # SUBCOMPONENTS
         
         macconfig = MacCsmaPPersistentConfigurationParameters(0.5)
-        usrpconfig = UsrpConfiguration(freq =2462000000.0, bandwidth = 1000000, chan = 0, hw_tx_gain = 70.0, hw_rx_gain = 20.0, sw_tx_gain = -12.0)
+        usrpconfig = UsrpConfiguration(freq =900000000.0, bandwidth = 1000000, chan = 0, hw_tx_gain = 70.0, hw_rx_gain = 20.0, sw_tx_gain = -12.0)
         
 
         self.appl = UsrpApplicationLayer("UsrpApplicationLayer", componentinstancenumber, topology=topology)
