@@ -7,7 +7,7 @@ from pickle import FALSE
 
 
 from adhoccomputing.GenericModel import GenericModel
-from adhoccomputing.Generics import Event, EventTypes, ConnectorTypes, GenericMessageHeader,GenericMessage
+from adhoccomputing.Generics import Event, EventTypes, ConnectorTypes, GenericMessageHeader,GenericMessage,UsrpConfiguration
 from adhoccomputing.Experimentation.Topology import Topology
 from adhoccomputing.Networking.PhysicalLayer.UsrpB210OfdmFlexFramePhy import  UsrpB210OfdmFlexFramePhy
 from adhoccomputing.Networking.MacProtocol.CSMA import MacCsmaPPersistent, MacCsmaPPersistentConfigurationParameters
@@ -83,9 +83,10 @@ class UsrpNode(GenericModel):
         # SUBCOMPONENTS
         
         macconfig = MacCsmaPPersistentConfigurationParameters(0.5)
+        usrpconfig = UsrpConfiguration(freq =2462000000.0, bandwidth = 250000, chan = 0, hw_tx_gain = 50.0, hw_rx_gain = 20.0, sw_tx_gain = -12.0)
         
         self.appl = UsrpApplicationLayer("UsrpApplicationLayer", componentinstancenumber, topology=topology)
-        self.phy = UsrpB210OfdmFlexFramePhy("UsrpB210OfdmFlexFramePhy", componentinstancenumber, topology=topology)
+        self.phy = UsrpB210OfdmFlexFramePhy("UsrpB210OfdmFlexFramePhy", componentinstancenumber, usrpconfig=usrpconfig, topology=topology)
         self.mac = MacCsmaPPersistent("MacCsmaPPersistent", componentinstancenumber,  configurationparameters=macconfig, uhd=self.phy.ahcuhd,topology=topology)
         
         self.components.append(self.appl)
@@ -120,9 +121,10 @@ def main():
 
     topo.start()
     i = 0
-    while(i < 10):
-        topo.nodes[1].appl.send_self(Event(topo.nodes[0], UsrpApplicationLayerEventTypes.STARTBROADCAST, None))
-        time.sleep(1)
+    while(i < 100):
+        topo.nodes[2].appl.send_self(Event(topo.nodes[0], UsrpApplicationLayerEventTypes.STARTBROADCAST, None))
+        #topo.nodes[1].appl.send_self(Event(topo.nodes[0], UsrpApplicationLayerEventTypes.STARTBROADCAST, None))
+        time.sleep(0.1)
         i = i + 1
 
 
