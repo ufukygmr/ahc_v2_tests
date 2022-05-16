@@ -13,7 +13,6 @@ from adhoccomputing.Networking.PhysicalLayer.UsrpB210OfdmFlexFramePhy import  Us
 from adhoccomputing.Networking.MacProtocol.CSMA import MacCsmaPPersistent, MacCsmaPPersistentConfigurationParameters
 
 
-
 # define your own message types
 class ApplicationLayerMessageTypes(Enum):
     BROADCAST = "BROADCAST"
@@ -79,6 +78,7 @@ class UsrpNode(GenericModel):
         
         macconfig = MacCsmaPPersistentConfigurationParameters(0.5)
         usrpconfig = SDRConfiguration(freq =900000000.0, bandwidth = 250000, chan = 0, hw_tx_gain = 50.0, hw_rx_gain = 20.0, sw_tx_gain = -12.0)
+        bladerfconfig = SDRConfiguration(freq =900000000.0, bandwidth = 250000, chan = 0, hw_tx_gain = 50.0, hw_rx_gain = 20.0, sw_tx_gain = -12.0)
         
         self.appl = UsrpApplicationLayer("UsrpApplicationLayer", componentinstancenumber, topology=topology)
         self.phy = UsrpB210OfdmFlexFramePhy("UsrpB210OfdmFlexFramePhy", componentinstancenumber, usrpconfig=usrpconfig, topology=topology)
