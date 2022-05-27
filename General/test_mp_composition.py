@@ -5,7 +5,7 @@ sys.path.insert(0, os.getcwd())
 import networkx as nx
 from adhoccomputing.GenericModel import GenericModel
 from adhoccomputing.Generics import Event, EventTypes, ConnectorTypes
-from adhoccomputing.Experimentation.Topology import Topology, mp_construct_sdr_topology_without_channels
+from adhoccomputing.Experimentation.Topology import Topology
 from adhoccomputing.Networking.LogicalChannels.GenericChannel import GenericChannel
 
 
@@ -105,7 +105,7 @@ def main():
   topo = Topology()
 
   numnodes = 10
-  mp_construct_sdr_topology_without_channels( numnodes, Node, topo )
+  topo.mp_construct_sdr_topology_without_channels( numnodes, Node )
   topo.start()
   time.sleep(1)
   topo.exit()

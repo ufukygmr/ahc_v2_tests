@@ -6,19 +6,19 @@ sys.path.insert(0, os.getcwd())
 import networkx as nx
 
 from adhoccomputing.GenericModel import GenericModel
-from adhoccomputing.Generics import Event, EventTypes, ConnectorTypes
+from adhoccomputing.Generics import Event, EventTypes, ConnectorTypes, setAHCLogLevel, logger
 from adhoccomputing.Experimentation.Topology import Topology
 from adhoccomputing.Networking.LinkLayer.GenericLinkLayer import GenericLinkLayer
 from adhoccomputing.Networking.NetworkLayer.GenericNetworkLayer import GenericNetworkLayer
 from adhoccomputing.Networking.LogicalChannels.GenericChannel import GenericChannel
-
-from adhoccomputing.DistributedAlgorithms.Clocks.LogicalClocks import VectorClock
+import logging
+from adhoccomputing.DistributedAlgorithms.Clocks.LogicalClocks import VectorClock, LogicalClockEventTypes
 
 
 class ApplicationLayerComponent(GenericModel):
 
   def on_init(self, eventobj: Event):
-    #print(f"Initializing {self.componentname}.{self.componentinstancenumber}")
+    logger.info(f"{self.componentname}-{self.componentinstancenumber} RECEIVED {str(eventobj)}")
     if self.componentinstancenumber == 0:
       self.send_down(Event(self, EventTypes.MFRT, None))
 
@@ -37,9 +37,11 @@ class AdHocNode(GenericModel):
     #print(f"Initializing {self.componentname}.{self.componentinstancenumber}")
     pass
   def on_message_from_top(self, eventobj: Event):
+    logger.applog(f"{self.componentname}-{self.componentinstancenumber} RECEIVED {str(eventobj)}")
     self.send_down(Event(self, EventTypes.MFRT, eventobj.eventcontent))
 
   def on_message_from_bottom(self, eventobj: Event):
+    logger.info(f"{self.componentname}-{self.componentinstancenumber} RECEIVED {str(eventobj)}")
     self.send_up(Event(self, EventTypes.MFRB, eventobj.eventcontent))
 
 
@@ -71,15 +73,16 @@ class AdHocNode(GenericModel):
     
 
 def main():
-  
+  setAHCLogLevel(21)
   G = nx.random_geometric_graph(3, 1)
   topo = Topology()
   topo.construct_from_graph(G, AdHocNode, GenericChannel)
-
-  
   topo.start()
-  time.sleep(20)
 
+  topo.nodes[0].middleware.trigger_event(Event(None, LogicalClockEventTypes.SEND, None))
+
+  time.sleep(5)
+  topo.exit()
 
 if __name__ == "__main__":
   main()

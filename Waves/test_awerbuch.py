@@ -19,7 +19,7 @@ from adhoccomputing.Experimentation.Topology import Topology
 from adhoccomputing.Networking.LinkLayer.GenericLinkLayer import GenericLinkLayer
 from adhoccomputing.Networking.NetworkLayer.GenericNetworkLayer import GenericNetworkLayer
 from adhoccomputing.DistributedAlgorithms.Waves.AwerbuchDFS import WaveAwerbuchComponent
-from adhoccomputing.Networking.LogicalChannels.GenericChannel import P2PFIFOPerfectChannel
+from adhoccomputing.Networking.LogicalChannels.GenericChannel import GenericChannel
 
 number_mesg = 0
 topo = Topology()
@@ -88,7 +88,7 @@ def main():
 
   print("Starting Awerbuch test")
   # topo is defined as a global variable
-  topo.construct_from_graph(G, AdHocNode, P2PFIFOPerfectChannel)
+  topo.construct_from_graph(G, AdHocNode, GenericChannel)
   topo.start()
 
 

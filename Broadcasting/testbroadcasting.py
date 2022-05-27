@@ -2,29 +2,42 @@ import networkx as nx
 import time
 
 from adhoccomputing.GenericModel import GenericModel
-from adhoccomputing.Generics import Event, EventTypes, ConnectorTypes
+from adhoccomputing.Generics import Event, setAHCLogLevel, ConnectorTypes, EventTypes, logger
 from adhoccomputing.Experimentation.Topology import Topology
 from adhoccomputing.Networking.LinkLayer.GenericLinkLayer import GenericLinkLayer
 from adhoccomputing.Networking.LogicalChannels.GenericChannel import GenericChannel
-from adhoccomputing.DistributedAlgorithms.Broadcasting.Broadcasting import ControlledFlooding
+from adhoccomputing.DistributedAlgorithms.Broadcasting.Broadcasting import ControlledFlooding,BroadcastingEventTypes
+import logging
+
+class ApplicationLayer(GenericModel): 
+  def on_message_from_bottom(self, eventobj: Event):
+    logger.applog(f"{self.componentname}-{self.componentinstancenumber} RECEIVED {str(eventobj)}")
 
 class AdHocNode(GenericModel):
   def on_message_from_top(self, eventobj: Event):
-    self.send_down(Event(self, EventTypes.MFRT, eventobj.eventcontent))
+    eventobj.event = EventTypes.MFRT
+    self.send_down(eventobj)
 
   def on_message_from_bottom(self, eventobj: Event):
-    self.send_up(Event(self, EventTypes.MFRB, eventobj.eventcontent))
+    eventobj.event = EventTypes.MFRB
+    self.send_up(eventobj)
 
   def __init__(self, componentname, componentinstancenumber, context=None, configurationparameters=None, num_worker_threads=1, topology=None):
     super().__init__(componentname, componentinstancenumber, context, configurationparameters, num_worker_threads, topology)
     # SUBCOMPONENTS
-    self.broadcastservice = ControlledFlooding("SimpleFlooding", componentinstancenumber, topology=topology)
-    self.linklayer = GenericLinkLayer("LinkLayer", componentinstancenumber, topology=topology)
+    self.appl = ApplicationLayer("ApplicationLayer", componentinstancenumber, topology=topology)
+    self.broadcastservice = ControlledFlooding("ControlledFlooding", componentinstancenumber, topology=topology)
+    self.linklayer = GenericLinkLayer("GenericLinkLayer", componentinstancenumber, topology=topology)
 
+    self.components.append(self.appl)
     self.components.append(self.broadcastservice)
     self.components.append(self.linklayer)
 
+    
     # CONNECTIONS AMONG SUBCOMPONENTS
+    self.appl.connect_me_to_component(ConnectorTypes.DOWN, self.broadcastservice)
+    self.broadcastservice.connect_me_to_component(ConnectorTypes.UP, self.appl)
+
     self.broadcastservice.connect_me_to_component(ConnectorTypes.DOWN, self.linklayer)
     self.linklayer.connect_me_to_component(ConnectorTypes.UP, self.broadcastservice)
 
@@ -34,17 +47,30 @@ class AdHocNode(GenericModel):
 
 
 def main():
-  G = nx.random_geometric_graph(19, 0.5)
+  #NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL
+  setAHCLogLevel(21)
+  #A random geometric graph, undirected and without self-loops
+  G = nx.random_geometric_graph(9, 0.5)
+  
+  
+  # G =nx.Graph()
+  # G.add_node(0)
+  # G.add_node(1)
+  # G.add_node(2)
+  # G.add_edge(0,1)
+  # G.add_edge(1,0)
+  # G.add_edge(0,2)
+  # G.add_edge(2,0)
+  # G.add_edge(1,2)
+  # G.add_edge(2,1)
+
   topo = Topology()
   topo.construct_from_graph(G, AdHocNode, GenericChannel)
+  print(str(topo))
   topo.start()
-  cnt = 1
-  while True:
-    cnt = cnt +1 
-    time.sleep(1)
-    if cnt > 5:
-      break
-
+  topo.nodes[0].broadcastservice.trigger_event(Event(None, BroadcastingEventTypes.BROADCAST, "BROADCAST MESSAGE"))
+  time.sleep(5)
+  topo.exit()
 
 if __name__ == "__main__":
   main()
