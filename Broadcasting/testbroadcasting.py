@@ -2,7 +2,7 @@ import networkx as nx
 import time
 
 from adhoccomputing.GenericModel import GenericModel
-from adhoccomputing.Generics import Event, setAHCLogLevel, ConnectorTypes, EventTypes, logger
+from adhoccomputing.Generics import Event, setAHCLogLevel, ConnectorTypes, EventTypes, logger, AHCTimer
 from adhoccomputing.Experimentation.Topology import Topology
 from adhoccomputing.Networking.LinkLayer.GenericLinkLayer import GenericLinkLayer
 from adhoccomputing.Networking.LogicalChannels.GenericChannel import GenericChannel
@@ -45,12 +45,16 @@ class AdHocNode(GenericModel):
     self.linklayer.connect_me_to_component(ConnectorTypes.DOWN, self)
     self.connect_me_to_component(ConnectorTypes.UP, self.linklayer)
 
+topo = Topology()
+
+def send_broadcast_message_event():
+  topo.nodes[0].broadcastservice.trigger_event(Event(None, BroadcastingEventTypes.BROADCAST, "BROADCAST MESSAGE"))
 
 def main():
   #NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL
   setAHCLogLevel(21)
   #A random geometric graph, undirected and without self-loops
-  G = nx.random_geometric_graph(9, 0.5)
+  G = nx.random_geometric_graph(9, 1)
   
   
   # G =nx.Graph()
@@ -64,12 +68,15 @@ def main():
   # G.add_edge(1,2)
   # G.add_edge(2,1)
 
-  topo = Topology()
+  
   topo.construct_from_graph(G, AdHocNode, GenericChannel)
   print(str(topo))
   topo.start()
-  topo.nodes[0].broadcastservice.trigger_event(Event(None, BroadcastingEventTypes.BROADCAST, "BROADCAST MESSAGE"))
+  t = AHCTimer(1, send_broadcast_message_event)
+  t.start()
+
   time.sleep(5)
+  t.cancel()
   topo.exit()
 
 if __name__ == "__main__":
