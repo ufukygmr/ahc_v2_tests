@@ -1,3 +1,4 @@
+import logging
 import time
 from graph import *
 import numpy as np
@@ -5,7 +6,7 @@ import matplotlib.pyplot as plt
 
 
 from adhoccomputing.GenericModel import GenericModel
-from adhoccomputing.Generics import Event, EventTypes, ConnectorTypes
+from adhoccomputing.Generics import Event, EventTypes, ConnectorTypes, setAHCLogLevel, logger
 from adhoccomputing.Experimentation.Topology import Topology
 from adhoccomputing.Networking.LinkLayer.GenericLinkLayer import GenericLinkLayer
 from adhoccomputing.Networking.NetworkLayer.GenericNetworkLayer import GenericNetworkLayer
@@ -20,13 +21,15 @@ message_count = 0
 class AdHocNode(GenericModel):
 
   def on_init(self, eventobj: Event):
-    print(f"Initializing {self.componentname}.{self.componentinstancenumber}")
+    logger.applog(f"Initializing {self.componentname}.{self.componentinstancenumber}")
 
   def on_message_from_top(self, eventobj: Event):
     self.send_down(Event(self, EventTypes.MFRT, eventobj.eventcontent))
+    logger.applog(f"{self.componentname}.{self.componentinstancenumber} RECEIVED {str(eventobj)}")
 
   def on_message_from_bottom(self, eventobj: Event):
     self.send_up(Event(self, EventTypes.MFRB, eventobj.eventcontent))
+    logger.applog(f"{self.componentname}.{self.componentinstancenumber} RECEIVED {str(eventobj)}")
 
   def __init__(self, componentname, componentinstancenumber, context=None, configurationparameters=None, num_worker_threads=1, topology=None):
     super().__init__(componentname, componentinstancenumber, context, configurationparameters, num_worker_threads, topology)
@@ -62,6 +65,8 @@ def main():
   # G.add_edges_from([(1, 2)])
   # nx.draw(G, with_labels=True, font_weight='bold')
   # plt.draw()
+  #setAHCLogLevel(logging.DEBUG)
+  setAHCLogLevel(21)
   global message_count
   fig, axes = plt.subplots(1, 7)
   fig.set_figheight(5)
@@ -70,7 +75,7 @@ def main():
   time_arr = []
   message_count_arr = []
 
-  for i in range(4, 9):
+  for i in range(4, 5):
 
     start_time = time.time()
 
@@ -98,14 +103,9 @@ def main():
   axes[6].set_xlabel('Node Count')
   axes[5].set_title("Message Count by Node Count")
   axes[5].set_title("Time")
-  #plt.show()
-  # plt.show()  # while (True): pass
-  cnt = 1
-  while True:
-    cnt = cnt +1 
-    time.sleep(1)
-    if cnt > 10:
-      break
-
+  # plt.show()
+  # plt.show() 
+  #time.sleep(30)
+  #topo.exit()
 if __name__ == "__main__":
   main()

@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 
 from adhoccomputing.GenericModel import GenericModel
-from adhoccomputing.Generics import Event, EventTypes, ConnectorTypes
+from adhoccomputing.Generics import Event, EventTypes, ConnectorTypes, logger, setAHCLogLevel
 from adhoccomputing.Experimentation.Topology import Topology
 from adhoccomputing.Networking.LinkLayer.GenericLinkLayer import GenericLinkLayer
 from adhoccomputing.Networking.NetworkLayer.GenericNetworkLayer import GenericNetworkLayer
@@ -23,13 +23,15 @@ from adhoccomputing.DistributedAlgorithms.Election.Spira import ElectionSpiraCom
 class AdHocNode(GenericModel):
 
     def on_init(self, eventobj: Event):
-        print(f"Initializing {self.componentname}.{self.componentinstancenumber}")
+        logger.applog(f"Initializing {self.componentname}.{self.componentinstancenumber}")
 
     def on_message_from_top(self, eventobj: Event):
         self.send_down(Event(self, EventTypes.MFRT, eventobj.eventcontent))
+        logger.applog(f"{self.componentname}.{self.componentinstancenumber} RECEIVED {str(eventobj)}")
 
     def on_message_from_bottom(self, eventobj: Event):
         self.send_up(Event(self, EventTypes.MFRB, eventobj.eventcontent))
+        logger.applog(f"{self.componentname}.{self.componentinstancenumber} RECEIVED {str(eventobj)}")
 
     def initialize(self):
         self.appllayer.initialize_connect()
@@ -66,6 +68,9 @@ message_count = 0
 
 
 def main():
+
+    #setAHCLogLevel(logging.DEBUG)
+    setAHCLogLevel(21)
     # G = nx.Graph()
     # G.add_nodes_from([1, 2])
     # G.add_edges_from([(1, 2)])
@@ -80,7 +85,7 @@ def main():
     time_arr = []
     message_arr = []
 
-    for i in range(4, 9):
+    for i in range(4, 5):
 
         start_time = time.time()
 
@@ -109,12 +114,7 @@ def main():
     print(message_arr)
     #plt.show()
     # plt.show()  # while (True): pass
-    cnt = 1
-    while True:
-        cnt = cnt +1 
-        time.sleep(1)
-        if cnt > 10:
-            break
+    topo.exit()
 
 
 if __name__ == "__main__":
