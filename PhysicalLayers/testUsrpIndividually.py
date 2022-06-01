@@ -5,7 +5,7 @@ import signal
 sys.path.insert(0, os.getcwd())
 
 from adhoccomputing.GenericModel import GenericModel
-from adhoccomputing.Generics import Event, ConnectorTypes, SDRConfiguration
+from adhoccomputing.Generics import *
 from adhoccomputing.Experimentation.Topology import Topology
 from adhoccomputing.Networking.PhysicalLayer.UsrpB210OfdmFlexFramePhy import  UsrpB210OfdmFlexFramePhy
 from adhoccomputing.Networking.MacProtocol.CSMA import MacCsmaPPersistent, MacCsmaPPersistentConfigurationParameters
@@ -51,15 +51,16 @@ class UsrpNode(GenericModel):
 topo = Topology()
 
 def main(argv):
+    setAHCLogLevel(logging.INFO)
     id = 0 #default 0 if arg -i is not given
     try:
         opts, args = getopt.getopt(argv,"hi:",["id="])
     except getopt.GetoptError:
-        print ("testUsrpIndividually.py -i <nodeinstancenumber>")
+        logger.error ("testUsrpIndividually.py -i <nodeinstancenumber>")
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
-            print ("testUsrpIndividually.py -i <nodeinstancenumber>")
+            logger.error ("testUsrpIndividually.py -i <nodeinstancenumber>")
             sys.exit()
         elif opt in ("-i", "--ifile"):
             id = arg
@@ -84,17 +85,16 @@ def main(argv):
     
 
 def ctrlc_signal_handler(sig, frame):
-    print('You pressed Ctrl+C!')
     topo.exit()
     time.sleep(5)
     sys.exit(0)
 
 
 def segfault_signal_handler(sig, frame):
-    print('Segmentation Fault')
     topo.exit()
     time.sleep(5)
     sys.exit(0)
+    
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, ctrlc_signal_handler)
     signal.signal(signal.SIGSEGV, segfault_signal_handler)

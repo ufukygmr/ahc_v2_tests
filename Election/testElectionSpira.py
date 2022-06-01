@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 
 from adhoccomputing.GenericModel import GenericModel
-from adhoccomputing.Generics import Event, EventTypes, ConnectorTypes, logger, setAHCLogLevel
+from adhoccomputing.Generics import *
 from adhoccomputing.Experimentation.Topology import Topology
 from adhoccomputing.Networking.LinkLayer.GenericLinkLayer import GenericLinkLayer
 from adhoccomputing.Networking.NetworkLayer.GenericNetworkLayer import GenericNetworkLayer
@@ -101,19 +101,20 @@ def main():
         message_arr.append(message_count)
         message_count = 0
         # g.plot()
-    axes[0].plot(np.array([n ** 2 for n in range(4, 9)]), np.array(message_arr))
-    axes[1].plot(np.array([n ** 2 for n in range(4, 9)]), np.array(time_arr))
-    axes[0].set_ylabel('Messeage Count')
-    axes[0].set_xlabel('Node Count')
-    axes[1].set_ylabel('Time Passes in Seconds')
-    axes[1].set_xlabel('Node Count')
-    axes[0].set_title("Message Count by Node Count")
-    axes[1].set_title("Time")
+    # axes[0].plot(np.array([n ** 2 for n in range(4, 9)]), np.array(message_arr))
+    # axes[1].plot(np.array([n ** 2 for n in range(4, 9)]), np.array(time_arr))
+    # axes[0].set_ylabel('Messeage Count')
+    # axes[0].set_xlabel('Node Count')
+    # axes[1].set_ylabel('Time Passes in Seconds')
+    # axes[1].set_xlabel('Node Count')
+    # axes[0].set_title("Message Count by Node Count")
+    # axes[1].set_title("Time")
     # axes[1,0].set_title("Time Passed for execution of Gallager-Humblet-Spira algorithm")
-    print(time_arr)
-    print(message_arr)
+    logger.applog(time_arr)
+    logger.applog(message_arr)
     #plt.show()
     # plt.show()  # while (True): pass
+    time.sleep(5)
     topo.exit()
 
 

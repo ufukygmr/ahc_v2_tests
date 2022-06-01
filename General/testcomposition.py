@@ -4,7 +4,7 @@ import time
 sys.path.insert(0, os.getcwd())
 
 from adhoccomputing.GenericModel import GenericModel
-from adhoccomputing.Generics import Event, EventTypes, ConnectorTypes
+from adhoccomputing.Generics import *
 from adhoccomputing.Experimentation.Topology import Topology
 
 
@@ -75,36 +75,59 @@ class Node(GenericModel):
     self.components.append(self.B)
     self.components.append(self.L)
 
-    # CONNECTIONS AMONG SUBCOMPONENTS
-    self.A.connect_me_to_component(ConnectorTypes.DOWN, self.B)
-    self.A.connect_me_to_component(ConnectorTypes.DOWN, self.N)
+  # THERE ARE THREE WAYS FOR COMPOSITION AS SHOWN BELOW
+  # USE ONLY ONE OF THEM IN ORDER NOT TO GET ERRORS
 
-    self.N.connect_me_to_component(ConnectorTypes.UP, self.A)
-    self.B.connect_me_to_component(ConnectorTypes.UP, self.A)
+    # # CONNECTIONS AMONG SUBCOMPONENTS  USING DIRECT FUNCTIONS
+    # self.A.connect_me_to_component(ConnectorTypes.DOWN, self.B)
+    # self.A.connect_me_to_component(ConnectorTypes.DOWN, self.N)
+    # self.N.connect_me_to_component(ConnectorTypes.UP, self.A)
+    # self.B.connect_me_to_component(ConnectorTypes.UP, self.A)
+    # self.N.connect_me_to_component(ConnectorTypes.PEER, self.B)
+    # self.B.connect_me_to_component(ConnectorTypes.PEER, self.N)
+    # self.B.connect_me_to_component(ConnectorTypes.DOWN, self.L)
+    # self.N.connect_me_to_component(ConnectorTypes.DOWN, self.L)
+    # self.L.connect_me_to_component(ConnectorTypes.UP, self.B)
+    # self.L.connect_me_to_component(ConnectorTypes.UP, self.N)
+    # ## Connect the bottom component to the composite component....
+    # self.L.connect_me_to_component(ConnectorTypes.DOWN, self)
+    # self.connect_me_to_component(ConnectorTypes.UP, self.L)
 
-    self.N.connect_me_to_component(ConnectorTypes.PEER, self.B)
-    self.B.connect_me_to_component(ConnectorTypes.PEER, self.N)
+    ## CONNECTION using U (up) D (down) P (peer) functions
+    self.A.D(self.B)
+    self.A.D(self.N)
+    self.N.U(self.A)
+    self.B.U(self.A)
+    self.N.P(self.B)
+    self.B.P(self.N)
+    self.N.D(self.L)
+    self.L.U(self.B)
+    self.L.U(self.N)
+    self.L.D(self)
+    self.U(self.L)
+    
+    # ## CONNECTION USING INFIX OPERATAORS
+    # self.A |D| self.B
+    # self.A |D| self.N
+    # self.N |U| self.A
+    # self.B |U| self.A
+    # self.N |P| self.B
+    # self.B |P| self.N
+    # self.N |D| self.L
+    # self.L |U| self.B
+    # self.L |U| self.N
+    # self.L |D| (self)
+    # self |U| self.L
 
-    self.B.connect_me_to_component(ConnectorTypes.DOWN, self.L)
-    self.N.connect_me_to_component(ConnectorTypes.DOWN, self.L)
-
-    self.L.connect_me_to_component(ConnectorTypes.UP, self.B)
-    self.L.connect_me_to_component(ConnectorTypes.UP, self.N)
-
-    # Connect the bottom component to the composite component....
-    self.L.connect_me_to_component(ConnectorTypes.DOWN, self)
-    self.connect_me_to_component(ConnectorTypes.UP, self.L)
 
 def main():
+  setAHCLogLevel(DEBUG_LEVEL_APPLOG)
+  setAHCLogLevel(DEBUG)
   topo = Topology();
   topo.construct_single_node(Node, 0)
   topo.start()
-  cnt = 1
-  while True:
-    cnt = cnt +1 
-    time.sleep(1)
-    if cnt > 5:
-      break
+  time.sleep(1)
+  topo.exit()
 
 if __name__ == "__main__":
   main()

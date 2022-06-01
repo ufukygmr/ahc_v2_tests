@@ -3,7 +3,6 @@ import sys
 import time
 import random
 from enum import Enum
-
 sys.path.insert(0, os.getcwd())
 
 import networkx as nx
@@ -11,7 +10,7 @@ import matplotlib.pyplot as plt
 
 
 from adhoccomputing.GenericModel import GenericModel
-from adhoccomputing.Generics import Event, EventTypes, ConnectorTypes, GenericMessageHeader, GenericMessagePayload, GenericMessage
+from adhoccomputing.Generics import *
 from adhoccomputing.Experimentation.Topology import Topology
 from adhoccomputing.Networking.LinkLayer.GenericLinkLayer import GenericLinkLayer
 from adhoccomputing.Networking.NetworkLayer.GenericNetworkLayer import GenericNetworkLayer
@@ -26,28 +25,31 @@ class ApplicationLayerMessageTypes(Enum):
 
 # define your own message header structure
 class ApplicationLayerMessageHeader(GenericMessageHeader):
-    pass
+    def __str__(self) -> str:
+        return "ApplicationLayerMessageHeader"
 
 
 # define your own message payload structure
 class ApplicationLayerMessagePayload(GenericMessagePayload):
-    pass
+    def __str__(self) -> str:
+        return "ApplicationLayerMessagePayload"
 
 
 class ApplicationLayerComponent(GenericModel):
-    def on_init(self, eventobj: Event):
-        print(f"Initializing {self.componentname}.{self.componentinstancenumber}")
+    
 
-        if self.componentinstancenumber == 0:
-            # destination = random.randint(len(Topology.G.nodes))
-            destination = 1
-            hdr = ApplicationLayerMessageHeader(ApplicationLayerMessageTypes.PROPOSE, self.componentinstancenumber,
+    def send_message(self):
+        destination = 1
+        hdr = ApplicationLayerMessageHeader(ApplicationLayerMessageTypes.PROPOSE, self.componentinstancenumber,
                                                 destination)
-            payload = ApplicationLayerMessagePayload("23")
-            proposalmessage = GenericMessage(hdr, payload)
-            randdelay = random.randint(0, 5)
-            time.sleep(randdelay)
-            self.send_self(Event(self, "propose", proposalmessage))
+        payload = ApplicationLayerMessagePayload("23")
+        proposalmessage = GenericMessage(hdr, payload)
+        self.send_self(Event(self, "propose", proposalmessage))
+
+    def on_init(self, eventobj: Event):
+        if self.componentinstancenumber == 0:
+            self.t = AHCTimer(0.1, self.send_message)
+            self.t.start()
         else:
             pass
 
@@ -56,15 +58,15 @@ class ApplicationLayerComponent(GenericModel):
             applmessage = eventobj.eventcontent
             hdr = applmessage.header
             if hdr.messagetype == ApplicationLayerMessageTypes.ACCEPT:
-                print(
+                logger.applog(
                     f"Node-{self.componentinstancenumber} says Node-{hdr.messagefrom} has sent {hdr.messagetype} message")
             elif hdr.messagetype == ApplicationLayerMessageTypes.PROPOSE:
-                print(
+                logger.applog(
                     f"Node-{self.componentinstancenumber} says Node-{hdr.messagefrom} has sent {hdr.messagetype} message")
         except AttributeError:
-            print("Attribute Error")
+            logger.error("Attribute Error")
 
-    # print(f"{self.componentname}.{self.componentinstancenumber}: Gotton message {eventobj.content} ")
+    # logger.applog(f"{self.componentname}.{self.componentinstancenumber}: Gotton message {eventobj.content} ")
     # value = eventobj.content.value
     # value += 1
     # newmsg = MessageContent( value )
@@ -80,7 +82,7 @@ class ApplicationLayerComponent(GenericModel):
         self.send_down(Event(self, EventTypes.MFRT, proposalmessage))
 
     def on_agree(self, eventobj: Event):
-        print(f"Agreed on {eventobj.eventcontent}")
+        logger.applog(f"Agreed on {eventobj.eventcontent}")
 
     def on_timer_expired(self, eventobj: Event):
         pass
@@ -95,55 +97,93 @@ class ApplicationLayerComponent(GenericModel):
 class AdHocNode(GenericModel):
 
     def on_init(self, eventobj: Event):
-        print(f"Initializing {self.componentname}.{self.componentinstancenumber}")
+        #logger.applog(f"Initializing {self.componentname}.{self.componentinstancenumber}")
+        pass
 
     def on_message_from_top(self, eventobj: Event):
-        self.send_down(Event(self, EventTypes.MFRT, eventobj.eventcontent))
+        self.send_down(eventobj)
 
     def on_message_from_bottom(self, eventobj: Event):
-        self.send_up(Event(self, EventTypes.MFRB, eventobj.eventcontent))
+        self.send_up(eventobj)
 
     def __init__(self, componentname, componentinstancenumber, context=None, configurationparameters=None, num_worker_threads=1, topology=None):
         super().__init__(componentname, componentinstancenumber, context, configurationparameters, num_worker_threads, topology)
         # SUBCOMPONENTS
-        self.appllayer = ApplicationLayerComponent("ApplicationLayer", componentinstancenumber, topology=topology)
-        self.netlayer = GenericNetworkLayer("NetworkLayer", componentinstancenumber, topology=topology)
-        self.linklayer = GenericLinkLayer("LinkLayer", componentinstancenumber, topology=topology)
+        self.appl = ApplicationLayerComponent("ApplicationLayer", componentinstancenumber, topology=topology)
+        self.net = GenericNetworkLayer("NetworkLayer", componentinstancenumber, topology=topology)
+        self.link = GenericLinkLayer("LinkLayer", componentinstancenumber, topology=topology)
         # self.failuredetect = GenericFailureDetector("FailureDetector", componentid)
 
-        self.components.append(self.appllayer)
-        self.components.append(self.netlayer)
-        self.components.append(self.linklayer)
+        self.components.append(self.appl)
+        self.components.append(self.net)
+        self.components.append(self.link)
         
-        # CONNECTIONS AMONG SUBCOMPONENTS
-        self.appllayer.connect_me_to_component(ConnectorTypes.DOWN, self.netlayer)
-        # self.failuredetect.connectMeToComponent(PortNames.DOWN, self.netlayer)
-        self.netlayer.connect_me_to_component(ConnectorTypes.UP, self.appllayer)
-        # self.netlayer.connectMeToComponent(PortNames.UP, self.failuredetect)
-        self.netlayer.connect_me_to_component(ConnectorTypes.DOWN, self.linklayer)
-        self.linklayer.connect_me_to_component(ConnectorTypes.UP, self.netlayer)
+        ##Connect the bottom component to the composite component....
+        ## CONNECTION USING INFIX OPERATAORS
+        self.appl |D| self.net 
+        self.net |D| self.link
+        self.link |D| self
+        
+        self |U| self.link 
+        self.link |U| self.net
+        self.net |U| self.appl 
 
-        # Connect the bottom component to the composite component....
-        self.linklayer.connect_me_to_component(ConnectorTypes.DOWN, self)
-        self.connect_me_to_component(ConnectorTypes.UP, self.linklayer)
+        ## CONNECTION using U (up) D (down) P (peer) functions
+
+        # self.appl.D(self.net)
+        # self.net.D(self.link)
+        # self.link.D(self)
+
+        # self.U(self.link)
+        # self.link.U(self.net)
+        # self.net.U(self.appl)
+        
+        ## CONNECTION USING direct function    
+        # self.appl.connect_me_to_component(ConnectorTypes.DOWN, self.net)
+        # self.net.connect_me_to_component(ConnectorTypes.UP, self.appl)
+        # self.net.connect_me_to_component(ConnectorTypes.DOWN, self.link)
+        # self.link.connect_me_to_component(ConnectorTypes.UP, self.net)
+        # self.link.connect_me_to_component(ConnectorTypes.DOWN, self)
+        # self.connect_me_to_component(ConnectorTypes.UP, self.link)
 
 
 def main():
+    #NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL
+    setAHCLogLevel(25)
+    setAHCLogLevel(DEBUG_LEVEL_APPLOG)
     # G = nx.Graph()
     # G.add_nodes_from([1, 2])
     # G.add_edges_from([(1, 2)])
     # nx.draw(G, with_labels=True, font_weight='bold')
     # plt.draw()
-    G = nx.random_geometric_graph(19, 0.5)
-    nx.draw(G, with_labels=True, font_weight='bold')
-    plt.draw()
-
+    #G = nx.random_geometric_graph(4, 0.1)
+    G =nx.Graph()
+    G.add_node(0)
+    G.add_node(1)
+    G.add_node(2)
+    G.add_edge(0,1)
+    G.add_edge(1,0)
+    G.add_edge(0,2)
+    G.add_edge(2,0)
+    G.add_edge(1,2)
+    G.add_edge(2,1)
+    
+    #nx.draw(G, with_labels=True, font_weight='bold')
+    #plt.draw()
+    # logger.debug("debug")
+    # logger.info("info")
+    # logger.warning("warning")
+    # logger.error("error")
+    # logger.critical("critical")
     topo = Topology()
     topo.construct_from_graph(G, AdHocNode, GenericChannel)
+    
     topo.start()
-
-    plt.show()  # while (True): pass
-
+    
+    #plt.show()  # while (True): pass
+    time.sleep(1)
+    logger.applog(str(topo))
+    topo.exit()
 
 if __name__ == "__main__":
     main()

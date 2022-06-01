@@ -7,7 +7,7 @@ from pickle import FALSE
 
 
 from adhoccomputing.GenericModel import GenericModel
-from adhoccomputing.Generics import Event, EventTypes, ConnectorTypes, GenericMessageHeader,GenericMessage,SDRConfiguration
+from adhoccomputing.Generics import *
 from adhoccomputing.Experimentation.Topology import Topology
 from adhoccomputing.Networking.PhysicalLayer.UsrpB210OfdmFlexFramePhy import  UsrpB210OfdmFlexFramePhy
 from adhoccomputing.Networking.MacProtocol.CSMA import MacCsmaPPersistent, MacCsmaPPersistentConfigurationParameters
@@ -41,7 +41,7 @@ class UsrpApplicationLayer(GenericModel):
     
     def on_message_from_bottom(self, eventobj: Event):
         evt = Event(self, EventTypes.MFRT, eventobj.eventcontent)
-        print(f"I am Node.{self.componentinstancenumber}, received from Node.{eventobj.eventcontent.header.messagefrom} a message: {eventobj.eventcontent.payload}")    
+        logger.applog(f"I am Node.{self.componentinstancenumber}, received from Node.{eventobj.eventcontent.header.messagefrom} a message: {eventobj.eventcontent.header.sequencenumber}")    
         if self.componentinstancenumber == 1:
             evt.eventcontent.header.messageto = 0
             evt.eventcontent.header.messagefrom = 1
@@ -49,6 +49,7 @@ class UsrpApplicationLayer(GenericModel):
             evt.eventcontent.header.messageto = 1
             evt.eventcontent.header.messagefrom = 0
         evt.eventcontent.payload = eventobj.eventcontent.payload
+        evt.eventcontent.header.sequencenumber = eventobj.eventcontent.header.sequencenumber + 1
         #print(f"I am {self.componentname}.{self.componentinstancenumber}, sending down eventcontent={eventobj.eventcontent.payload}\n")
         self.send_down(evt)  # PINGPONG
     
@@ -58,8 +59,8 @@ class UsrpApplicationLayer(GenericModel):
         else:
             hdr = ApplicationLayerMessageHeader(ApplicationLayerMessageTypes.BROADCAST, 0, 1)
         self.counter = self.counter + 1
-        
-        payload = "BMSG-" + str(self.counter)
+        hdr.sequencenumber = 1
+        payload = "BMSG-"*200 + str(self.counter)
         broadcastmessage = GenericMessage(hdr, payload)
         evt = Event(self, EventTypes.MFRT, broadcastmessage)
         # time.sleep(3)
@@ -76,12 +77,15 @@ class UsrpNode(GenericModel):
         super().__init__(componentname, componentinstancenumber, context, configurationparameters, num_worker_threads, topology)
         # SUBCOMPONENTS
         
-        macconfig = MacCsmaPPersistentConfigurationParameters(0.5)
-        usrpconfig = SDRConfiguration(freq =900000000.0, bandwidth = 250000, chan = 0, hw_tx_gain = 50.0, hw_rx_gain = 20.0, sw_tx_gain = -12.0)
+        macconfig = MacCsmaPPersistentConfigurationParameters(0.5, -51)
+        #usrpconfig = SDRConfiguration(freq =900000000.0, bandwidth = 250000, chan = 0, hw_tx_gain = 50.0, hw_rx_gain = 20.0, sw_tx_gain = -12.0)
+        #sdrconfig = SDRConfiguration(freq =915000000.0, bandwidth = 2000000, chan = 0, hw_tx_gain = 70, hw_rx_gain = 70, sw_tx_gain = -12.0)
+        sdrconfig = SDRConfiguration(freq =915000000.0, bandwidth = 20000000, chan = 0, hw_tx_gain = 76, hw_rx_gain = 20, sw_tx_gain = -12.0)
+
         bladerfconfig = SDRConfiguration(freq =900000000.0, bandwidth = 250000, chan = 0, hw_tx_gain = 50.0, hw_rx_gain = 20.0, sw_tx_gain = -12.0)
         
         self.appl = UsrpApplicationLayer("UsrpApplicationLayer", componentinstancenumber, topology=topology)
-        self.phy = UsrpB210OfdmFlexFramePhy("UsrpB210OfdmFlexFramePhy", componentinstancenumber, usrpconfig=usrpconfig, topology=topology)
+        self.phy = UsrpB210OfdmFlexFramePhy("UsrpB210OfdmFlexFramePhy", componentinstancenumber, usrpconfig=sdrconfig, topology=topology)
         print(self.phy.sdrdev)
         self.mac = MacCsmaPPersistent("MacCsmaPPersistent", componentinstancenumber,  configurationparameters=macconfig, sdr=self.phy.sdrdev,topology=topology)
         
@@ -106,6 +110,7 @@ class UsrpNode(GenericModel):
         
 
 def main():
+    setAHCLogLevel(LOG_LEVEL_APPLOG)
     topo = Topology()
 # Note that the topology has to specific: usrp winslab_b210_0 is run by instance 0 of the component
 # Therefore, the usrps have to have names winslab_b210_x where x \in (0 to nodecount-1)
@@ -118,8 +123,8 @@ def main():
     topo.start()
     i = 0
     while(i < 100):
-        topo.nodes[1].appl.send_self(Event(topo.nodes[1], UsrpApplicationLayerEventTypes.STARTBROADCAST, None))
-        time.sleep(0.1)
+        #topo.nodes[1].appl.send_self(Event(topo.nodes[1], UsrpApplicationLayerEventTypes.STARTBROADCAST, None))
+        #time.sleep(0.1)
         topo.nodes[0].appl.send_self(Event(topo.nodes[0], UsrpApplicationLayerEventTypes.STARTBROADCAST, None))
         time.sleep(0.1)
         i = i + 1
