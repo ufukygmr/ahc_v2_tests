@@ -69,7 +69,7 @@ def main(argv):
     topo.start()
 
     i = 1
-    while(i<10000):
+    while(i<100):
         topo.nodes[0].appl.send_self(Event(topo.nodes[0], PingPongApplicationLayerEventTypes.STARTBROADCAST, None))
         i += 1
         time.sleep(0.1)
