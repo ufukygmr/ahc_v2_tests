@@ -10,7 +10,7 @@ from adhoccomputing.Experimentation.Topology import Topology
 from adhoccomputing.Networking.PhysicalLayer.UsrpB210OfdmFlexFramePhy import  UsrpB210OfdmFlexFramePhy
 from adhoccomputing.Networking.MacProtocol.CSMA import MacCsmaPPersistent, MacCsmaPPersistentConfigurationParameters
 from adhoccomputing.Networking.ApplicationLayer.PingPongApplicationLayer import *
-
+import logging
 
          
 class UsrpNode(GenericModel):
@@ -22,8 +22,8 @@ class UsrpNode(GenericModel):
         super().__init__(componentname, componentinstancenumber, context, configurationparameters, num_worker_threads, topology)
         # SUBCOMPONENTS
         
-        macconfig = MacCsmaPPersistentConfigurationParameters(0.5, -30)
-        sdrconfig = SDRConfiguration(freq =915000000.0, bandwidth = 2000000, chan = 0, hw_tx_gain = 70, hw_rx_gain = 20, sw_tx_gain = -12.0)
+        macconfig = MacCsmaPPersistentConfigurationParameters(0.5, -50)
+        sdrconfig = SDRConfiguration(freq =915000000.0, bandwidth = 20000000, chan = 0, hw_tx_gain = 76, hw_rx_gain = 20, sw_tx_gain = -12.0)
 
         self.appl = PingPongApplicationLayer("PingPongApplicationLayer", componentinstancenumber, topology=topology)
         self.phy = UsrpB210OfdmFlexFramePhy("UsrpB210OfdmFlexFramePhy", componentinstancenumber, topology=topology,usrpconfig=sdrconfig, )
@@ -78,7 +78,7 @@ def main(argv):
     
     while(True):
         topo.nodes[0].appl.send_self(Event(topo.nodes[0], PingPongApplicationLayerEventTypes.STARTBROADCAST, None))
-        time.sleep(0.2)
+        time.sleep(1)
 
     #time.sleep(5)
     #topo.exit()
