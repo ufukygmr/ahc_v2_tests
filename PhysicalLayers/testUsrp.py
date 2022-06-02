@@ -128,7 +128,7 @@ def main():
         topo.nodes[0].appl.send_self(Event(topo.nodes[0], UsrpApplicationLayerEventTypes.STARTBROADCAST, None))
         time.sleep(0.1)
         i = i + 1
-
+    topo.exit()
 
 if __name__ == "__main__":
     main()
