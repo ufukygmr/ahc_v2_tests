@@ -27,7 +27,7 @@ class BladeRFNode(GenericModel):
         # SUBCOMPONENTS
         
         macconfig = MacCsmaPPersistentConfigurationParameters(0.5, -40)
-        sdrconfig = SDRConfiguration(freq =2484000000, bandwidth = 2000000, chan = 0, hw_tx_gain = 0, hw_rx_gain = 39, sw_tx_gain = -12.0)
+        sdrconfig = SDRConfiguration(freq =2484000000, bandwidth = 20000000, chan = 0, hw_tx_gain = 0, hw_rx_gain = 39, sw_tx_gain = -12.0)
         
         self.appl = PingPongApplicationLayer("PingPongApplicationLayer", componentinstancenumber, topology=topology)
         self.phy = BladeRFOfdmFlexFramePhy("BladeRFOfdmFlexFramePhy", componentinstancenumber, usrpconfig=sdrconfig, topology=topology)
@@ -69,8 +69,8 @@ def main(argv):
     topo.start()
 
     i = 1
-    while(i<100):
-        topo.nodes[0].appl.send_self(Event(topo.nodes[0], PingPongApplicationLayerEventTypes.STARTBROADCAST, None))
+    while(i<10000):
+        #topo.nodes[0].appl.send_self(Event(topo.nodes[0], PingPongApplicationLayerEventTypes.STARTBROADCAST, None))
         i += 1
         time.sleep(0.1)
 
